@@ -5,7 +5,10 @@ import Footer from "@/components/Footer";
 import SectionLabel from "@/components/SectionLabel";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, ShoppingCart, Check } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const courses = [
   {
@@ -65,6 +68,17 @@ const faqs = [
 
 const CourseCard = ({ course }: { course: typeof courses[0] }) => {
   const [expanded, setExpanded] = useState(false);
+  const { formatPrice } = useCurrency();
+  const { addItem, isInCart } = useCart();
+  const { toast } = useToast();
+  const inCart = isInCart(course.id);
+
+  const handleAdd = () => {
+    if (inCart) return;
+    addItem({ id: course.id, title: course.title, price: course.price });
+    toast({ title: "Added to cart", description: `${course.title} has been added to your cart.` });
+  };
+
   return (
     <div className="glass-card rounded-lg p-6 flex flex-col">
       <div className="flex items-center gap-2 mb-3">
@@ -98,10 +112,19 @@ const CourseCard = ({ course }: { course: typeof courses[0] }) => {
         {expanded ? <>Show Less <ChevronUp className="h-3 w-3" /></> : <>View Details <ChevronDown className="h-3 w-3" /></>}
       </button>
 
-      <div className="mt-auto">
-        <Button className="w-full" size="sm">
-          Enrol Now — ${course.price} <ArrowRight className="ml-2 h-3.5 w-3.5" />
+      <div className="mt-auto flex gap-2">
+        <Button className="flex-1" size="sm" onClick={handleAdd} disabled={inCart} variant={inCart ? "secondary" : "default"}>
+          {inCart ? (
+            <><Check className="mr-1.5 h-3.5 w-3.5" /> In Cart</>
+          ) : (
+            <>Enrol Now — {formatPrice(course.price)} <ArrowRight className="ml-2 h-3.5 w-3.5" /></>
+          )}
         </Button>
+        {inCart && (
+          <Button asChild size="sm" variant="outline">
+            <Link to="/checkout">Checkout</Link>
+          </Button>
+        )}
       </div>
     </div>
   );
